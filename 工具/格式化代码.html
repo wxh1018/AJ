@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        body {
+            padding-top: 15%;
+        }
+
+        .center {
+            width: 700px;
+            height: 450px;
+            border: 1px solid #cccccc;
+            padding: 20px;
+            /* margin: 200px 0; */
+            display: flex;
+            flex-flow: column;
+            justify-content: space-between;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        textarea {
+            outline: none;
+            height: 100px;
+        }
+
+        .change {
+            height: 50px;
+            margin: 20px 0;
+            flex: 1;
+        }
+
+        .device {
+            height: 50px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .device input {
+            height: 100%;
+            margin: 0 30px;
+            outline: none;
+        }
+    </style>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
+</head>
+
+<body>
+    <div class="center">
+        <div class="device">
+            <span>开发环境的分辨率:</span>
+            <input type="text" id="x" value="900" placeholder="x">
+            <input type="text" id="y" value="1600" placeholder="y">
+        </div>
+        <textarea name="" id="value1" cols="30" rows="10"></textarea>
+        <div class="btn">
+            <button class="change" onclick="change()">转换普通格式</button>
+            <button class="change" id="copyByDev">转换json对象</button>
+            <button class="change" id="copybtn" data-clipboard-action="copy" data-clipboard-target="#value2">复制</button>
+        </div>
+
+        <textarea name="" id="value2" cols="30" rows="10"></textarea>
+    </div>
+    <script>
+        let value1 = document.getElementById('value1')
+        let value2 = document.getElementById('value2')
+        let xval = document.getElementById('x')
+        let yval = document.getElementById('y')
+
+        var clipboard = new ClipboardJS('#copybtn');
+        clipboard.on('success', function (e) {
+            console.log('复制成功');
+            value1.value = ''
+            value2.value = ''
+        });
+        // 转换
+        function change() {
+            let val1 = value1.value
+            if (!val1) {
+                alert('请输入正确的格式')
+                return
+            }
+            let newfn = GetAuColor(val1)
+            value2.value = newfn
+        }
+        // findMultiColorInRegionFuzzy( 0xf7ffff, "0|7|0x105d84,0|14|0x73e7ff", 90, 0, 0, 1599, 899)
+
+        // xy = images.findMultiColors(img, '#008ec5', [[3, 8, '#ffffff'], [3, 15, '#008ec5']])
+
+        function GetAuColor(name) {
+            String.prototype.fl = function () {
+                return '#' + this.replace(/0x/g, '')
+            }
+            String.prototype.getRegion = function () {
+                let arr = this.replace(/^,/, '').split(',')
+                let x = arr[1];
+                let y = arr[2];
+                let width = arr[3] - arr[1]
+                let height = arr[4] - arr[2]
+                return '[' + x + ',' + y + ',' + width + ',' + height + ']'
+            }
+            let content = name.replace(/findMultiColorInRegionFuzzy|\(|\)|\s/g, '')
+            let firstColor = content.substr(0, content.indexOf(',')).fl()
+            let arr = content.split('"')
+            //中间颜色部分
+            let centerStr = arr[1]
+            //区域部分
+            let region = arr[2].getRegion()
+            // -----------------
+            let str = '['
+            let pointsArr = centerStr.split(',')
+            for (let i = 0; i < pointsArr.length; i++) {
+                let v = pointsArr[i]
+                let x = v.split('|')[0]
+                let y = v.split('|')[1]
+                let color = v.split('|')[2].fl()
+                if (i == pointsArr.length - 1) {
+                    str += '[' + x + ',' + y + ',' + "'" + color + "']"
+                } else {
+                    str += '[' + x + ',' + y + ',' + "'" + color + "'],"
+                }
+            }
+            str += ']'
+            return `images.findMultiColors(img, '${firstColor}', ${str},{region:${region}})`
+        }
+
+        // 复制当前分辨率下的代码
+        // copyByDev
+        $('#copyByDev').click(() => {
+            let dev = [$('#x').val(), $('#y').val()]
+            let fn = $('#value1').val()
+            let newfn = GetAuColor_dev(fn)
+            value2.value = newfn
+        })
+
+        function GetAuColor_dev(name) {
+            String.prototype.fl = function () {
+                return '#' + this.replace(/0x/g, '')
+            }
+            String.prototype.getRegion = function () {
+                let arr = this.replace(/^,/, '').split(',')
+                let x = arr[1];
+                let y = arr[2];
+                let width = arr[3] - arr[1]
+                let height = arr[4] - arr[2]
+                return [x, y, width, height]
+            }
+            /**
+             * @xpro x轴的比例
+             * @ypro y轴的比例
+             **/
+            let content = name.replace(/findMultiColorInRegionFuzzy|\(|\)|\s/g, '')
+            let firstColor = content.substr(0, content.indexOf(',')).fl()
+            let arr = content.split('"')
+            //中间颜色部分
+            let centerStr = arr[1]
+            //区域部分
+            let region = arr[2].getRegion()
+            // -----------------
+            let str = []
+            let pointsArr = centerStr.split(',')
+            for (let i = 0; i < pointsArr.length; i++) {
+                let v = pointsArr[i]
+                let x = v.split('|')[0]
+                let y = v.split('|')[1]
+                let color = v.split('|')[2].fl()
+                str.push([x, y, color])
+            }
+            let obj = {
+                img: 'img',
+                firstColor,
+                arr: str,
+                region,
+                threshold: 20
+            }
+            // return `images.findMultiColors(img, '${firstColor}', ${str},{region:${region}})`
+            return JSON.stringify(obj)
+        }
+    </script>
+</body>
+
+</html>
