@@ -13,7 +13,7 @@ function WanGuo(deploy) {
     this.timer = null
     this.less = null;
     this.plus = null
-    this.leval = deploy.leval || 10
+    this.leval = deploy.leval || 12
     this.isleval = false
     this.success = 0
     /**
@@ -28,7 +28,7 @@ function WanGuo(deploy) {
         }
         sleep(1000)
     }
-    this.isimg = function (name, position) {
+    this.isimg = function (name, type) {
         let cap = this.rootGetScreen()
         let src = this.src + name
         let target = images.read(src)
@@ -38,14 +38,10 @@ function WanGuo(deploy) {
             this.tlog(name, '未在本地找到图片')
             exit()
         } else {
-            let img = findImage(cap, target, 1)
+            let img = findImage(cap, target, type)
             log(name, img)
             if (img) {
-                if (position == 'bottom') {
-                    return img
-                } else {
-                    return img
-                }
+                return img
             } else {
                 toastLog(name, '没有识别到坐标')
                 return false
@@ -158,35 +154,42 @@ function WanGuo(deploy) {
     }
     // 使用存档
     this.use_archive = function (n) {
-        var that = this
-        n = n || 1
+        log('使用存档')
+        let that = this
+        let n = n || 1
         s(1)
-        let cundang = this.isimg('save_cundang.png')
-        let first = { x: cundang.x, y: cundang.y + 130 }
+        let cundang = this.isimg('存档1.png')
+        let first = cundang
         if (n == 1) {
             log('使用存档1')
             log(first)
             this.cl(first)
-            this.cl(first)
+            // this.cl(first)
             s(1)
-            panduan('first1.png')
+            panduan('存档1.png')
         }
         function panduan(img) {
             //继续判断有没有
             let img2 = that.isimg(img)
             if (!img2) {
                 log('不在城内关闭')
-                that.close()
+                // that.close()
             } else {
                 log('在城内')
                 // let fn = () => cl(845, 780)
                 // run_n(3, fn)
             }
+            let water = w.isimg('water.png')
+            if (water) {
+                w.tlog('喝水水')
+                w.cl1(1235, 322)
+                w.close()
+                sleep(1000)
+            }
             that.run_play()
         }
-
     }
-    this.close = () => this.cl(this.isimg('close_dialog.png'))
+    this.close = () => this.cl1(1365, 105)
     // 行军
     this.run_play = function () {
         s(1)
@@ -312,8 +315,7 @@ function WanGuo(deploy) {
 
 w = new WanGuo(storage.get('deploy'))
 w.init()
-// exit()
-log(storage.get('deploy'))
+log('storage', storage.get('deploy'))
 let pn = 'com.lilithgames.rok.offical.cn'
 app.launch(pn)
 sleep(5000)
@@ -369,12 +371,14 @@ function start() {
     // w.attack()
     //判断 是否需要创建军队
     sleep(1000)
-    let ishome = w.isimg('home.png')
+    let ishome = findMultiColors({ "img": w.rootGetScreen(), "firstColor": "#008ec5", "arr": [["10", "0", "#008ec5"], ["6", "10", "#008ec5"], ["10", "10", "#ffffff"]], "region": ["0", "0", 1599, 899], "threshold": 20 })
+    log('判断是在外面')
     if (ishome) {//不创建 直接行军
+        log('在外面')
         sleep(1000)
         w.cl(ishome)
         sleep(1000)
-        let left_point = { x: ishome.x - 385, y: ishome.y + 14 }
+        left_point = { x: ishome.x - 320, y: ishome.y + 80 }
         //判断状态
         iswarn = w.run_warn(left_point)
         if (iswarn) {
@@ -385,17 +389,22 @@ function start() {
             // 行军
             log('行军军')
             click(ishome.x - 245, ishome.y + 65)
-            let water = w.isimg('use_water.png') || { x: 1230, y: 330 }
+            sleep(2000)
+            //有问题
+            let water = findMultiColors({ "img": w.rootGetScreen(), "firstColor": "#00f729", "arr": [["0", "17", "#088229"], ["46", "29", "#ffa63a"], ["82", "29", "#107db5"]], "region": ["0", "0", 1599, 899], "threshold": 20 })
             if (water) {
-                w.tlog('喝水水')
-                w.cl(water)
+                w.tlog('体力不足')
+                w.cl1(1235, 322)
                 w.close()
                 sleep(1000)
-                // click(ishome.x - 245, ishome.y + 65)
-                click(1364, 100)
+                click(ishome.x - 245, ishome.y + 65)
+            }else{
+                w.tlog('继续战斗')
             }
         }
     } else {
+        //
+        log('不在外面')
         w.creat()
         w.use_archive()
     }
@@ -411,10 +420,11 @@ function start() {
                 thread.interrupt()
             } else {
                 //判断失败
-                if (!w.isred()) {
-                    log('回家了')
-                    thread.interrupt()
-                }
+                log('判断什么条件……')
+                // if (!w.isred()) {
+                //     log('回家了')
+                //     thread.interrupt()
+                // }
             }
         }, 3000);
     });

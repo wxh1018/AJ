@@ -1,5 +1,4 @@
 // 开发设备分辨率
-
 let dev_device = { x: 900, y: 1600 }
 setScreenMetrics(dev_device.x, dev_device.y)
 
@@ -50,15 +49,16 @@ function findMultiColors(obj, type) {
 
     }
     let res = images.findMultiColors(obj.img, obj.firstColor, newArr, { threshold: 20 })
+    log(res)
     let xy = getxy(res)
     if (type == 2) {
-        if (res) {
+        if (xy) {
             sleep(1000)
             click(xy.x, xy.y)
             sleep(1000)
         }
     }
-    return res
+    return xy
 }
 
 
@@ -73,25 +73,22 @@ function findMultiColors(obj, type) {
  */
 function findImage(img, target, type) {
     let tar = ResizeImg(target)
-    log(tar)
-    let res = images.findImage(img, tar, { threshold: .7 })
-    log('识别到的图片坐标', res)
+    let res = images.findImage(img, tar, { threshold: .9 })
+    res2 = null
     if (res) {
         let changexy = getxy(res)
+        log('成功识别图片', changexy.x, changexy.y)
         //由于识别到的图片  返回的坐标 aj已经做了兼容处理  所以  这里需要再次转换
         // let changexy2 = getxy({ x: parseInt(changexy.x), y: parseInt(changexy.y) })
         //getcenter里面也做了一次处理  所以上面的可以不要
         res2 = getCenter(changexy, tar)
-        log('识别到的中心点坐标', res2)
         if (type == 2) {
             sleep(1000)
-            click(parseInt(res2.x), parseInt(res2.y))
+            click(res2.x, res2.y)
             sleep(1000)
-        } else {
-            toastLog('未识别到图片')
         }
     }
-    return res
+    return res2
 }
 /**
  * 
@@ -135,24 +132,26 @@ function getCenter(res, tar) {
     let deviceNow = getdevice()
     x_proportion = deviceNow.width / dev_device.y
     y_proportion = deviceNow.height / dev_device.x
-    log('x比例', x_proportion)
-    log('y比例', y_proportion)
-    console.log(res.x + tar.width / 2);
-    console.log(res.y + tar.height / 2);
     x = (res.x + tar.width / 2) / x_proportion
     y = (res.y + tar.height / 2) / y_proportion
-    return { x: x, y: y }
+    return { x: parseInt(x), y: parseInt(y) }
 }
 
 /**
  * @param {识别到的图片对象 返回{x:111,y:111}} res 
  */
 function getxy(res) {
-    let imgx2 = res.x
-    let imgy2 = res.y
-    let x1 = imgx2 * (dev_device.y / getdevice().width)
-    let y1 = imgy2 * (dev_device.x / getdevice().height)
-    return { x: x1, y: y1 }
+    if (res) {
+        log('多点识别坐标成功:', res.x, res.y)
+        let imgx2 = res.x
+        let imgy2 = res.y
+        let x1 = imgx2 * (dev_device.y / getdevice().width)
+        let y1 = imgy2 * (dev_device.x / getdevice().height)
+        return { x: parseInt(x1), y: parseInt(y1) }
+    } else {
+        return false
+    }
+
 }
 
 
@@ -167,10 +166,21 @@ function getdevice(type) {
 
 
 //模拟器专用截屏
-function rootGetScreen() {
-    shell("screencap -p " + url + "sc.png", true)
-    return images.read(url + 'sc.png')
+/**
+ * 
+ * @param {默认pc} type 
+ */
+function rootGetScreen(type) {
+    this.pcpath = '/sdcard/aa脚本/screen/'
+    let type = type || 'pc'
+    if (type == 'pc') {
+        files.ensureDir(this.pcpath)
+        shell("screencap -p " + this.pcpath + "sc.png", true)
+        return images.read(this.pcpath + 'sc.png')
+    } else {
+        return captureScreen()
+    }
 }
 
 
-module.exports = { findMultiColors: findMultiColors, findImage: findImage }
+module.exports = { findMultiColors: findMultiColors, findImage: findImage, getdevice: getdevice, screen: rootGetScreen, getxy: getxy }

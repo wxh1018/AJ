@@ -21,6 +21,7 @@ let dataObj = {
     Fangda_icon: 'fangda.png',
     //左下角搜索物资图标
     SearchAll_icon: 'search_all.png',
+    Water_colors: { "img": "img", "firstColor": "#00f729", "arr": [["0", "17", "#088229"], ["46", "29", "#ffa63a"], ["82", "29", "#107db5"]], "region": ["0", "0", 1599, 899], "threshold": 20 }
 }
 
 // let dataXY = {
@@ -50,16 +51,8 @@ let dataXY = function () {
     }
 }
 let xyfn = dataXY()
-log()
 
-// for (let key in dataObj) {
-//     if (typeof dataObj[key] == 'function') {
-//         let fn = dataObj[key]
-//         log(key, fn())
-//     }
-// }
-
-let imgxy = find('Collection_colors')
+let imgxy = find('Water_colors')
 log(imgxy)
 function find(find_atttibutes, type) {
     let targetxy = null
@@ -87,7 +80,7 @@ function find(find_atttibutes, type) {
             //查找图片
             let obj = dataObj[find_atttibutes]
             obj.img = rootGetScreen()
-            let isimg = findMultiColors(obj, 2)
+            let isimg = findMultiColors(obj, 1)
             xyfn.setVal(find_atttibutes, isimg)
             targetxy = isimg
         }
